@@ -2,6 +2,7 @@ package com.bridgelabz.bookstore.advice;
 
 import com.bridgelabz.bookstore.exceptions.MultipleUsers;
 import com.bridgelabz.bookstore.exceptions.UserNotFound;
+import com.bridgelabz.bookstore.exceptions.VerificationFailed;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -21,6 +22,14 @@ public class RegisterUserAdvice {
         APIResponse apiResponse = new APIResponse();
         apiResponse.setStatus(HttpStatus.BAD_REQUEST.value());
         apiResponse.setError(multipleUsers.getMessage());
+        return ResponseEntity.ok().body(apiResponse);
+    }
+
+    @ExceptionHandler(value = VerificationFailed.class)
+    public ResponseEntity<APIResponse> verificationFailed(VerificationFailed verificationFailed) {
+        APIResponse apiResponse = new APIResponse();
+        apiResponse.setStatus(HttpStatus.BAD_REQUEST.value());
+        apiResponse.setError(verificationFailed.getMessage());
         return ResponseEntity.ok().body(apiResponse);
     }
 }

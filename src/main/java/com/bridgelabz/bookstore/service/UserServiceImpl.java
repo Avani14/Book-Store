@@ -1,9 +1,11 @@
 package com.bridgelabz.bookstore.service;
 
 import com.bridgelabz.bookstore.dto.LoginDTO;
+import com.bridgelabz.bookstore.dto.ResetDTO;
 import com.bridgelabz.bookstore.dto.UserDTO;
 import com.bridgelabz.bookstore.dto.VerifyDTO;
 import com.bridgelabz.bookstore.exceptions.UserNotFound;
+import com.bridgelabz.bookstore.exceptions.VerificationFailed;
 import com.bridgelabz.bookstore.model.User;
 import com.bridgelabz.bookstore.repository.UserRepository;
 import com.bridgelabz.bookstore.utility.OTPGeneration;
@@ -54,11 +56,16 @@ public class UserServiceImpl implements UserService{
     }
 
     @Override
-    public User editUser(UserDTO userDTO, long id,String auth) throws UserNotFound {
+    public User editUser(UserDTO userDTO, long id,String auth) throws UserNotFound, VerificationFailed {
         User user = userRepository.findById(id).orElse(null);
         log.info(tokenUtility.decodeToken(auth));
-        if(user == null && getUserById(tokenUtility.decodeToken(auth)) == null){
-           throw new UserNotFound("User with id"+id+" not found");
+        if(userRepository.findById(id) == null&& getUserById(tokenUtility.decodeToken(auth)) == null){
+            if(userRepository.findById(id) == null) {
+                throw new UserNotFound("User with id" + id + " not found");
+            }
+            else{
+                throw new VerificationFailed("Verification failed");
+            }
         }
         user.setDOB(userDTO.getDOB());
         user.setKYC(userDTO.getKYC());
@@ -70,9 +77,14 @@ public class UserServiceImpl implements UserService{
     }
 
     @Override
-    public String deleteUser(long id,String auth) throws UserNotFound {
+    public String deleteUser(long id,String auth) throws UserNotFound, VerificationFailed {
         if(userRepository.findById(id) == null&& getUserById(tokenUtility.decodeToken(auth)) == null){
-            throw new UserNotFound("User with id"+id+" not found");
+            if(userRepository.findById(id) == null) {
+                throw new UserNotFound("User with id" + id + " not found");
+            }
+            else{
+                throw new VerificationFailed("Verification failed");
+            }
         }
         userRepository.deleteById(id);
         return "User with id:"+id+" is deleted successfully!!";
@@ -106,6 +118,40 @@ public class UserServiceImpl implements UserService{
             return true;
         }
         return false;
+    }
+
+    @Override
+    public String resetPassword(ResetDTO resetDTO, String auth) throws UserNotFound, VerificationFailed {
+        User user = userRepository.findUserByEmail(resetDTO.getEmail());
+        log.info("The password"+bCryptPasswordEncoder.matches(resetDTO.getOld_pass(),user.getPassword()));
+        log.info("User:"+userRepository.findUserByEmailAndPassword(resetDTO.getEmail(),resetDTO.getOld_pass()));
+        if(user == null && userRepository.findUserByEmail(tokenUtility.decodeToken(auth)) == null && bCryptPasswordEncoder.matches(resetDTO.getOld_pass(),user.getPassword())){
+               if(user == null){
+                   throw new UserNotFound("User with id:"+resetDTO.getEmail()+" not found");
+               }
+               else{
+                   throw new VerificationFailed("Verification failed");
+               }
+        }
+        user.setPassword(bCryptPasswordEncoder.encode(resetDTO.getNew_pass()));
+        userRepository.save(user);
+        return "Password reset successful";
+    }
+
+    @Override
+    public String forgetPassword(LoginDTO loginDTO, String auth) throws UserNotFound, VerificationFailed {
+        User user = userRepository.findUserByEmail(loginDTO.getEmailID());
+        if(user == null && userRepository.findUserByEmail(tokenUtility.decodeToken(auth)) == null){
+            if(user == null){
+                throw new UserNotFound("User with id:"+loginDTO.getEmailID()+" not found");
+            }
+            else{
+                throw new VerificationFailed("Verification failed");
+            }
+        }
+        user.setPassword(bCryptPasswordEncoder.encode(loginDTO.getPassword()));
+        userRepository.save(user);
+        return "Password reset successful";
     }
 
 

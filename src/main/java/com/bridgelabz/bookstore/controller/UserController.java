@@ -1,10 +1,8 @@
 package com.bridgelabz.bookstore.controller;
 
-import com.bridgelabz.bookstore.dto.LoginDTO;
-import com.bridgelabz.bookstore.dto.ResponseDTO;
-import com.bridgelabz.bookstore.dto.UserDTO;
-import com.bridgelabz.bookstore.dto.VerifyDTO;
+import com.bridgelabz.bookstore.dto.*;
 import com.bridgelabz.bookstore.exceptions.UserNotFound;
+import com.bridgelabz.bookstore.exceptions.VerificationFailed;
 import com.bridgelabz.bookstore.model.User;
 import com.bridgelabz.bookstore.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,19 +35,19 @@ public class UserController {
         return ResponseEntity.ok().body(responseDTO);
     }
     @PutMapping("/edit/{id}")
-    public ResponseEntity<ResponseDTO> editUser(@RequestBody UserDTO userDTO,@PathVariable long id,@RequestHeader(value = "Authorization") String auth) throws UserNotFound {
+    public ResponseEntity<ResponseDTO> editUser(@RequestBody UserDTO userDTO,@PathVariable long id,@RequestHeader(value = "Authorization") String auth) throws UserNotFound, VerificationFailed {
         User user = userService.editUser(userDTO,id,auth);
         ResponseDTO responseDTO = new ResponseDTO("User edited successfully!!!",user);
         return ResponseEntity.ok().body(responseDTO);
     }
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<ResponseDTO> deleteUser(@PathVariable long id,@RequestHeader(value = "Authorization") String auth) throws UserNotFound {
+    public ResponseEntity<ResponseDTO> deleteUser(@PathVariable long id,@RequestHeader(value = "Authorization") String auth) throws UserNotFound, VerificationFailed {
         String users = userService.deleteUser(id,auth);
         ResponseDTO responseDTO = new ResponseDTO("User deleted successfully!!!",users);
         return ResponseEntity.ok().body(responseDTO);
     }
     @PostMapping("/login")
-    public ResponseEntity<ResponseDTO> login(@RequestBody LoginDTO loginDTO) throws UserNotFound {
+    public ResponseEntity<ResponseDTO> login(@RequestBody LoginDTO loginDTO) throws UserNotFound{
         String token = userService.login(loginDTO);
         ResponseDTO responseDTO = new ResponseDTO("User Login successfully!!!",token);
         return ResponseEntity.ok().body(responseDTO);
@@ -58,6 +56,18 @@ public class UserController {
     public ResponseEntity<ResponseDTO> verify(@RequestBody VerifyDTO verifyDTO) throws UserNotFound {
         boolean ans = userService.verifyUser(verifyDTO.getEmail(),verifyDTO.getOtp());
         ResponseDTO responseDTO = new ResponseDTO("User verified successfully!!!",ans);
+        return ResponseEntity.ok().body(responseDTO);
+    }
+    @PostMapping("/reset-password")
+    public ResponseEntity<ResponseDTO> resetPassword(@RequestBody ResetDTO resetDTO,@RequestHeader(value = "Authorization") String auth) throws UserNotFound, VerificationFailed {
+        String ans = userService.resetPassword(resetDTO,auth);
+        ResponseDTO responseDTO = new ResponseDTO("",ans);
+        return ResponseEntity.ok().body(responseDTO);
+    }
+    @PostMapping("/forget-password")
+    public ResponseEntity<ResponseDTO> forget(@RequestBody LoginDTO loginDTO,@RequestHeader(value = "Authorization") String auth) throws UserNotFound, VerificationFailed {
+        String ans = userService.forgetPassword(loginDTO,auth);
+        ResponseDTO responseDTO = new ResponseDTO("",ans);
         return ResponseEntity.ok().body(responseDTO);
     }
 }
